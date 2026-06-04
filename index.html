@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Velocity Rush</title>
+<style>
+html,body{margin:0;overflow:hidden;background:#111;font-family:Arial}
+canvas{display:block}
+#menu,#gameOver,#pause{
+position:absolute;inset:0;display:flex;flex-direction:column;
+align-items:center;justify-content:center;color:#fff;
+background:rgba(0,0,0,.75);z-index:10
+}
+button{
+padding:12px 24px;border:none;border-radius:8px;
+font-size:18px;cursor:pointer
+}
+.hidden{display:none!important}
+#hud{
+position:absolute;top:10px;left:10px;color:#fff;
+font-weight:bold;z-index:5
+}
+</style>
+</head>
+<body>
+
+<div id="menu">
+<h1>VELOCITY RUSH</h1>
+<p>A/D or ←/→ = Move | Space = Jump | S = Slide</p>
+<button id="playBtn">PLAY</button>
+</div>
+
+<div id="pause" class="hidden">
+<h1>PAUSED</h1>
+<button onclick="togglePause()">Resume</button>
+</div>
+
+<div id="gameOver" class="hidden">
+<h1>GAME OVER</h1>
+<div id="finalStats"></div>
+<button onclick="restart()">Restart</button>
+</div>
+
+<div id="hud"></div>
+
+<canvas id="c"></canvas>
+
+<script>
+const canvas=document.getElementById("c");
+const ctx=canvas.getContext("2d");
+let W,H;
+
+function resize(){
+W=canvas.width=innerWidth;
+H=canvas.height=innerHeight;
+}
+addEventListener("resize",resize);
+resize();
+
+const lanes=[-140,0,140];
+const themes=[
+{sky:"#4fc3f7",road:"#333",accent:"#fff"},
+{sky:"#8e24aa",road:"#1a1a1a",accent:"#00e5ff"},
+{sky:"#f9a825",road:"#6d4c41",accent:"#fff176"},
+{sky:"#607d8b",road:"#2b2b2b",accent:"#ff9800"}
+];
+let theme=0;
+
+const audio=new (window.AudioContext||window.webkitAudioContext)();
+function beep(freq,dur){
+const o=audio.createOscillator();
+const g=audio.createGain();
+o.frequency.value=freq;
+o.connect(g);
+g.connect(audio.destination);
+g.gain.value=.05;
+o.start();
+g.gain.exponentialRampToValueAtTime(.0001,audio.currentTime+dur);
+o.stop(audio.currentTime+dur);
+}
+
+let gameStarted=false;
+let paused=false;
+
+const player={
+lane:1,
+x:0,
+targetX:0,
+y:0,
+vy:0,
+jump:false,
+slide:false,
+slideTimer:0,
+shield:false,
+magnet:0,
+boost:0,
+doubleCoins:0
+};
+
+let distance=0;
+let coins=0;
+let score=0;
+let combo=1;
+
+const objects=[];
+const particles=[];
+
+function rand(a,b){return Math.random()*(b-a)+a;}
+
+function spawnSegment(){
+const z=distance+1200;
+
+const safe=Math.floor(Math.random()*3);
+
+for(let lane=0;lane<3;lane++){
+if(lane!==safe&&Math.random()<0.7){
+objects.push({
+type:"obstacle",
+lane,
+z:z+rand(0,300),
+w:80,h:80
+});
+}
+if(Math.random()<0.6){
+objects.push({
+type:"coin",
+lane,
+z:z+rand(0,300)
+});
+}
+}
+
+if(Math.random()<0.2){
+objects.push({
+type:"power",
+lane:Math.floor(Math.random()*3),
+z:z+150,
+power:["shield","magnet","boost","double"][Math.floor(Math.random()*4)]
+});
+}
+}
+
+for(let i=0;i<20;i++)spawnSegment();
+
+function particle(x,y){
+particles.push({x,y,vx:rand(-2,2),vy:rand(-3,0),life:30});
+}
+
+function update(){
+if(!gameStarted||paused)return;
+
+const speed=player.boost>0?18:12;
+
+distance+=speed;
+
+if(distance%3000<speed){
+theme=(theme+1)%themes.length;
+}
+
+player.targetX=lanes[player.lane];
+player.x+=(player.targetX-player.x)*0.15;
+
+if(player.jump){
+player.vy-=0.7;
+player.y+=player.vy;
+if(player.y<=0){
+player.y=0;
+player.jump=false;
+player.vy=0;
+}
+}
+
+if(player.slide){
+player.slideTimer--;
+if(player.slideTimer<=0)player.slide=false;
+}
+
+for(let i=objects.length-1;i>=0;i--){
+const o=objects[i];
+o.z-=speed;
+
+const oz=H-(o.z*0.5);
+
+if(o.z<-50){
+objects.splice(i,1);
+continue;
+}
+
+if(Math.abs(o.z-100)<40){
+const px=player.x;
+const ox=lanes[o.lane];
+
+if(Math.abs(px-ox)<50){
+
+if(o.type==="coin"){
+coins+=player.doubleCoins>0?2:1;
+score+=10*combo;
+beep(900,.05);
+for(let p=0;p<8;p++)particle(W/2+px,H-180-player.y);
+objects.splice(i,1);
+continue;
+}
+
+if(o.type==="power"){
+beep(400,.15);
+if(o.power==="shield")player.shield=true;
+if(o.power==="magnet")player.magnet=900;
+if(o.power==="boost")player.boost=600;
+if(o.power==="double")player.doubleCoins=1200;
+objects.splice(i,1);
+continue;
+}
+
+if(o.type==="obstacle"){
+if(player.shield){
+player.shield=false;
+objects.splice(i,1);
+continue;
+}
+gameOver();
+}
+}
+}
+}
+
+for(let p=particles.length-1;p>=0;p--){
+let a=particles[p];
+a.x+=a.vx;
+a.y+=a.vy;
+a.life--;
+if(a.life<=0)particles.splice(p,1);
+}
+
+if(player.magnet>0){
+player.magnet--;
+for(const o of objects){
+if(o.type==="coin"){
+if(Math.abs(lanes[o.lane]-player.x)<250){
+o.z-=10;
+}
+}
+}
+}
+
+if(player.boost>0)player.boost--;
+if(player.doubleCoins>0)player.doubleCoins--;
+
+score=Math.floor(distance)+(coins*10);
+localStorage.bestScore=Math.max(score,+(localStorage.bestScore||0));
+localStorage.bestDistance=Math.max(distance,+(localStorage.bestDistance||0));
+localStorage.totalCoins=(+(localStorage.totalCoins||0))+0;
+}
+
+function draw(){
+const t=themes[theme];
+
+ctx.fillStyle=t.sky;
+ctx.fillRect(0,0,W,H);
+
+ctx.fillStyle=t.road;
+ctx.fillRect(W/2-220,0,440,H);
+
+ctx.strokeStyle="#666";
+ctx.lineWidth=4;
+
+for(let y=0;y<H;y+=40){
+ctx.beginPath();
+ctx.moveTo(W/2,y);
+ctx.lineTo(W/2,y+20);
+ctx.stroke();
+}
+
+for(const o of objects){
+const scale=Math.max(.2,1-(o.z/1200));
+const x=W/2+lanes[o.lane]*scale;
+const y=H-(o.z*0.5);
+
+if(o.type==="coin"){
+ctx.fillStyle="gold";
+ctx.beginPath();
+ctx.arc(x,y,10*scale,0,Math.PI*2);
+ctx.fill();
+}
+else if(o.type==="power"){
+ctx.fillStyle="#00ffcc";
+ctx.fillRect(x-15,y-15,30,30);
+}
+else{
+ctx.fillStyle="#ff5252";
+ctx.fillRect(x-30*scale,y-40*scale,60*scale,80*scale);
+}
+}
+
+ctx.fillStyle="rgba(0,0,0,.25)";
+ctx.beginPath();
+ctx.ellipse(W/2+player.x,H-130,40,15,0,0,Math.PI*2);
+ctx.fill();
+
+ctx.save();
+ctx.translate(W/2+player.x,H-160-player.y);
+
+ctx.fillStyle=player.shield?"#00ffff":"#fff";
+ctx.fillRect(-25,player.slide?0:-40,50,player.slide?40:80);
+
+ctx.restore();
+
+for(const p of particles){
+ctx.fillStyle=`rgba(255,255,0,${p.life/30})`;
+ctx.fillRect(p.x,p.y,4,4);
+}
+
+document.getElementById("hud").innerHTML=
+`Score: ${score}<br>
+Distance: ${Math.floor(distance)}<br>
+Coins: ${coins}<br>
+Shield: ${player.shield?"ON":"OFF"}<br>
+Magnet: ${(player.magnet/60).toFixed(1)}s<br>
+Boost: ${(player.boost/60).toFixed(1)}s<br>
+2x Coins: ${(player.doubleCoins/60).toFixed(1)}s`;
+}
+
+function loop(){
+update();
+draw();
+
+if(objects.length<40)spawnSegment();
+
+requestAnimationFrame(loop);
+}
+loop();
+
+function jump(){
+if(!player.jump){
+player.jump=true;
+player.vy=12;
+beep(500,.1);
+}
+}
+
+function slide(){
+player.slide=true;
+player.slideTimer=40;
+beep(250,.08);
+}
+
+addEventListener("keydown",e=>{
+if(e.key==="a"||e.key==="ArrowLeft")player.lane=Math.max(0,player.lane-1);
+if(e.key==="d"||e.key==="ArrowRight")player.lane=Math.min(2,player.lane+1);
+if(e.key===" " )jump();
+if(e.key==="s"||e.key==="ArrowDown")slide();
+if(e.key==="Escape")togglePause();
+});
+
+let sx=0,sy=0;
+canvas.addEventListener("touchstart",e=>{
+sx=e.touches[0].clientX;
+sy=e.touches[0].clientY;
+});
+canvas.addEventListener("touchend",e=>{
+let dx=e.changedTouches[0].clientX-sx;
+let dy=e.changedTouches[0].clientY-sy;
+
+if(Math.abs(dx)>Math.abs(dy)){
+if(dx>40)player.lane=Math.min(2,player.lane+1);
+if(dx<-40)player.lane=Math.max(0,player.lane-1);
+}else{
+if(dy<-40)jump();
+if(dy>40)slide();
+}
+});
+
+function gameOver(){
+document.getElementById("gameOver").classList.remove("hidden");
+document.getElementById("finalStats").innerHTML=
+`Score: ${score}<br>
+Best: ${localStorage.bestScore||score}`;
+gameStarted=false;
+}
+
+function restart(){
+location.reload();
+}
+
+function togglePause(){
+paused=!paused;
+document.getElementById("pause").classList.toggle("hidden",!paused);
+}
+
+document.getElementById("playBtn").onclick=()=>{
+document.getElementById("menu").classList.add("hidden");
+gameStarted=true;
+};
+</script>
+</body>
+</html>
