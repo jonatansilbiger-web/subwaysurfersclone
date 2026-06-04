@@ -197,7 +197,6 @@
 
         .tab-content.active { display: block; }
 
-        /* Custom Scrollbar */
         .tab-content::-webkit-scrollbar { width: 4px; }
         .tab-content::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
         .tab-content::-webkit-scrollbar-thumb { background: var(--neon-purple); border-radius: 2px; }
@@ -213,7 +212,6 @@
         }
         .list-item.achieved { border-left: 3px solid var(--neon-green); }
 
-        /* HUD overlay */
         #hud {
             position: absolute;
             top: 0;
@@ -338,8 +336,7 @@
             </div>
             <div class="hud-right">
                 <button class="pause-btn-trigger" id="pause-btn">║</button>
-                <div class="timers-container" id="timers-box">
-                    </div>
+                <div class="timers-container" id="timers-box"></div>
             </div>
         </div>
         <div id="hud-theme-alert" style="text-align: center; font-size: 1.5rem; font-weight: bold; color: var(--neon-blue); text-shadow: 0 0 10px #00f0ff; width:100%; opacity:0; transition: opacity 0.5s;"></div>
@@ -382,8 +379,7 @@
                 <div class="list-item"><span>Mobile Swipes</span><b>Left, Right, Up, Down</b></div>
             </div>
 
-            <div id="tab-achievements" class="tab-content">
-                </div>
+            <div id="tab-achievements" class="tab-content"></div>
 
             <button class="btn btn-blue" id="play-btn">Launch Run</button>
         </div>
@@ -442,8 +438,8 @@
             this.init(); const c = this.ctx; if(!c) return;
             let now = c.currentTime;
             let osc = c.createOscillator(), gain = c.createGain();
-            osc.type = 'sine'; osc.frequency.setValueAtTime(587.33, now); // D5
-            osc.frequency.setValueAtTime(880, now + 0.08); // A5
+            osc.type = 'sine'; osc.frequency.setValueAtTime(587.33, now);
+            osc.frequency.setValueAtTime(880, now + 0.08);
             gain.gain.setValueAtTime(0.1, now);
             gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
             osc.connect(gain); gain.connect(c.destination);
@@ -468,7 +464,6 @@
             osc.type = 'sawtooth';
             osc.frequency.setValueAtTime(200, now);
             osc.frequency.linearRampToValueAtTime(80, now + 0.25);
-            // Low pass filter feel via rapid decay
             gain.gain.setValueAtTime(0.12, now);
             gain.gain.linearRampToValueAtTime(0.001, now + 0.25);
             osc.connect(gain); gain.connect(c.destination);
@@ -491,7 +486,6 @@
         playCollision() {
             this.init(); const c = this.ctx; if(!c) return;
             let now = c.currentTime;
-            // White noise-like explosion explosion via low oscillator and frequency drop
             let osc = c.createOscillator(), gain = c.createGain();
             osc.type = 'sawtooth';
             osc.frequency.setValueAtTime(120, now);
@@ -569,7 +563,6 @@
             let today = new Date().toDateString();
             if (this.daily.date !== today) {
                 this.daily.date = today;
-                // Generate simple pseudorandom target based on day of month
                 let dayNum = new Date().getDate();
                 this.daily.targetCoins = 25 + (dayNum * 3) % 60; 
                 this.daily.progress = 0;
@@ -587,7 +580,6 @@
                 this.daily.progress += coins;
             }
 
-            // Evaluate achievements
             if(this.maxDistance >= this.achievements.rookie.target) this.achievements.rookie.unlocked = true;
             if(this.maxDistance >= this.achievements.marathon.target) this.achievements.marathon.unlocked = true;
             if(this.totalCoins >= this.achievements.hoarder.target) this.achievements.hoarder.unlocked = true;
@@ -599,7 +591,6 @@
         }
     };
 
-    // UI Tab Manager
     function switchTab(menuPrefix, tabName) {
         let panel = document.getElementById(`tab-${tabName}`);
         if(!panel) return;
@@ -609,11 +600,9 @@
         for(let t of tabs) t.classList.remove('active');
 
         panel.classList.add('active');
-        // Find triggering element
-        event.currentTarget.classList.add('active');
+        if (event && event.currentTarget) event.currentTarget.classList.add('active');
     }
 
-    // Render achievement lists
     function renderAchievementsUI() {
         const container = document.getElementById('tab-achievements');
         container.innerHTML = '';
@@ -649,7 +638,7 @@
     }
 
     // =========================================================================
-    // ENVIROMENTS & CONFIGURATION
+    // ENVIRONMENTS & CONFIGURATION
     // =========================================================================
     const THEMES = [
         { name: 'NEON CITY', sky: '#03030a', ground: '#0f0f1d', primary: '#00f0ff', secondary: '#ff007f', accent: '#9d00ff', building: '#090911' },
@@ -659,13 +648,12 @@
     ];
 
     const LANE_COUNT = 3;
-    const LANE_WIDTH = 3.5; // Virtual units
-    const TRACK_LENGTH = 300; // Total track segment units processed ahead
+    const LANE_WIDTH = 3.5; 
+    const TRACK_LENGTH = 300; 
 
-    // Powerup Definitions
     const POWERUP_TYPES = {
         MAGNET: { name: 'MAGNET', color: '#00f0ff', duration: 15 },
-        SHIELD: { name: 'SHIELD', color: '#39ff14', duration: 1 }, // Absorbs 1 hit instantly, handles own depletion
+        SHIELD: { name: 'SHIELD', color: '#39ff14', duration: 1 }, 
         BOOST: { name: 'SPEED BOOST', color: '#ff007f', duration: 10 },
         DOUBLE: { name: '2X COINS', color: '#ffd700', duration: 20 }
     };
@@ -679,54 +667,48 @@
         width: 0,
         height: 0,
         lastTime: 0,
-        state: 'MENU', // MENU, COUNTDOWN, PLAYING, PAUSED, GAMEOVER
+        state: 'MENU', 
         countdownVal: 3,
         countdownTimer: 0,
 
-        // Gameplay state
         distance: 0,
         coinsCollected: 0,
         score: 0,
-        baseSpeed: 18, // Units per second
+        baseSpeed: 18, 
         currentSpeed: 18,
         maxSpeed: 45,
         speedIncrement: 0.4,
         comboMultiplier: 1,
-        comboWindow: 0, // Reset timer for streak multiplier
+        comboWindow: 0, 
         themeIndex: 0,
         currentTheme: THEMES[0],
         themeTransitionTimer: 0,
         cameraShake: 0,
 
-        // Player Data
         player: {
-            lane: 1,         // 0: Left, 1: Center, 2: Right
-            targetX: 0,      // Virtual coordinate for smooth tweening
+            lane: 1,         
+            targetX: 0,      
             x: 0,
-            y: 0,            // Altitude off the ground (Jump state)
-            z: 0,            // Absolute progress along line
-            width: 0.8,      // Hitbox size (virtual meters)
+            y: 0,            
+            z: 0,            
+            width: 0.8,      
             height: 1.6,
-            vy: 0,           // Jump vertical velocity
+            vy: 0,           
             isJumping: false,
             isSliding: false,
             slideTimer: 0,
             slideDuration: 0.7,
-            tilt: 0,         // Camera/model visual side tilt
+            tilt: 0,         
             animFrame: 0
         },
 
-        // Pools & Entities
         obstacles: [],
         coins: [],
         powerups: [],
         particles: [],
-        scenery: [], // Side decorations like pillars, buildings, lights
+        scenery: [], 
 
-        // Active powerup timers map
         activePowerups: {},
-
-        // Input cache
         keys: {},
         touchStart: { x: 0, y: 0 },
         swipeThreshold: 40,
@@ -741,7 +723,6 @@
             Profile.load();
             refreshMenuStats();
 
-            // Menu interactions binds
             document.getElementById('play-btn').onclick = () => this.startCountdown();
             document.getElementById('pause-btn').onclick = () => this.pauseGame();
             document.getElementById('resume-btn').onclick = () => this.resumeGame();
@@ -749,12 +730,10 @@
             document.getElementById('restart-btn').onclick = () => this.startCountdown();
             document.getElementById('go-home-btn').onclick = () => this.quitToMenu();
 
-            // Tick cycle start
             requestAnimationFrame((t) => this.loop(t));
         },
 
         resize() {
-            // Keep native 16:9 vertical or horizontal feel, scale appropriately
             this.width = this.canvas.clientWidth;
             this.height = this.canvas.clientHeight;
             this.canvas.width = this.width;
@@ -762,11 +741,8 @@
         },
 
         setupControls() {
-            // Keyboard Listeners
             window.addEventListener('keydown', (e) => {
                 if(this.state !== 'PLAYING') return;
-                
-                // Prevent scrolling arrow keys
                 if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key)) e.preventDefault();
 
                 if (!this.keys[e.key]) {
@@ -782,7 +758,6 @@
                 this.keys[e.key] = false;
             });
 
-            // Mobile Touch Gestures
             this.canvas.addEventListener('touchstart', (e) => {
                 if(e.touches.length === 0) return;
                 this.touchStart.x = e.touches[0].clientX;
@@ -813,7 +788,6 @@
             let nextLane = this.player.lane + dir;
             if (nextLane >= 0 && nextLane < LANE_COUNT) {
                 this.player.lane = nextLane;
-                // Target calculated relative to lane width offset
                 this.player.targetX = (nextLane - 1) * LANE_WIDTH;
             }
         },
@@ -821,16 +795,15 @@
         jump() {
             if (!this.player.isJumping) {
                 this.player.isJumping = true;
-                this.player.vy = 16; // Impulse force
-                this.player.isSliding = false; // Cancel slide instantly
+                this.player.vy = 16; 
+                this.player.isSliding = false; 
                 AudioEngine.playJump();
             }
         },
 
         slide() {
             if (this.player.isJumping) {
-                // Fast fall mechanics if button pressed while in mid-air
-                this.player.vy = -15;
+                this.player.vy = -20;
             } else {
                 this.player.isSliding = true;
                 this.player.slideTimer = this.player.slideDuration;
@@ -838,7 +811,6 @@
             }
         },
 
-        // Initialize state fields for full run reset
         resetGame() {
             this.distance = 0;
             this.coinsCollected = 0;
@@ -867,14 +839,12 @@
             this.particles = [];
             this.scenery = [];
 
-            // Add initial environment decorations ahead
             for(let i = 20; i < TRACK_LENGTH; i += 15) {
                 this.generateDecorPair(i);
             }
             
-            // Check daily quest status to inject conditional multiplier
             if(Profile.daily.progress >= Profile.daily.targetCoins) {
-                this.comboMultiplier = 2; // Persistent base bonus boost
+                this.comboMultiplier = 2; 
             }
 
             document.getElementById('timers-box').innerHTML = '';
@@ -884,6 +854,7 @@
             this.resetGame();
             document.getElementById('main-menu').classList.add('hidden');
             document.getElementById('game-over-menu').classList.add('hidden');
+            document.getElementById('pause-menu').classList.add('hidden');
             document.getElementById('hud').classList.remove('hidden');
             
             this.state = 'COUNTDOWN';
@@ -911,6 +882,7 @@
             this.state = 'MENU';
             document.getElementById('pause-menu').classList.add('hidden');
             document.getElementById('game-over-menu').classList.add('hidden');
+            document.getElementById('countdown').classList.add('hidden');
             document.getElementById('hud').classList.add('hidden');
             document.getElementById('main-menu').classList.remove('hidden');
             refreshMenuStats();
@@ -935,11 +907,7 @@
             document.getElementById('go-highscore-alert').style.display = isNewHigh ? 'block' : 'none';
         },
 
-        // =========================================================================
-        // PROCEDURAL WORLD GENERATION LOGIC
-        // =========================================================================
         generateDecorPair(zPos) {
-            // Left/Right dynamic high rise structural backdrops
             this.scenery.push({
                 x: -LANE_WIDTH * 2.2 - (Math.random() * 4),
                 y: 0,
@@ -958,7 +926,6 @@
                 color: this.currentTheme.building,
                 isNeonLight: Math.random() > 0.4
             });
-            // Streetlights
             if(Math.random() > 0.5) {
                 this.scenery.push({ x: -LANE_WIDTH * 1.6, y: 0, z: zPos, w: 0.2, h: 6, isPole: true });
                 this.scenery.push({ x: LANE_WIDTH * 1.6, y: 0, z: zPos, w: 0.2, h: 6, isPole: true });
@@ -966,16 +933,13 @@
         },
 
         spawnWave(zAnchor) {
-            // Prevent generation overload if cluster already matches density
             let freeLanes = [0, 1, 2];
             let safeLane = Math.floor(Math.random() * 3);
-            freeLanes.splice(safeLane, 1); // Never clog this designated channel
+            freeLanes.splice(safeLane, 1); 
 
-            // Random Choice: Blockages, Powerup Drops or Coin Formations
             let rand = Math.random();
 
             if (rand < 0.45) {
-                // Spawn Obstacles in one or two clogged lanes
                 let lanesToClog = Math.random() > 0.5 ? [freeLanes[0]] : freeLanes;
                 lanesToClog.forEach(ln => {
                     let typeRand = Math.random();
@@ -983,9 +947,9 @@
                     let h = 1.2, w = 1.2, y = 0;
 
                     if (typeRand < 0.2) { obsType = 'BARRIER'; h = 1.0; w = 1.8; }
-                    else if (typeRand < 0.4) { obsType = 'HIGH_BARRIER'; h = 0.8; w = 1.5; y = 1.3; } // Must slide under
-                    else if (typeRand < 0.6) { obsType = 'LOW_BARRIER'; h = 0.6; w = 1.6; } // Quick jump
-                    else if (typeRand < 0.8) { obsType = 'TRUCK'; h = 3.2; w = 1.8; } // High profile blockage
+                    else if (typeRand < 0.4) { obsType = 'HIGH_BARRIER'; h = 0.8; w = 1.5; y = 1.3; } 
+                    else if (typeRand < 0.6) { obsType = 'LOW_BARRIER'; h = 0.6; w = 1.6; } 
+                    else if (typeRand < 0.8) { obsType = 'TRUCK'; h = 3.2; w = 1.8; } 
                     else { obsType = 'CONSTRUCTION'; h = 1.4; w = 2.2; }
 
                     this.obstacles.push({
@@ -1000,11 +964,9 @@
                     });
                 });
 
-                // Place standard safe coins on remaining spaces
                 this.spawnCoinPattern(safeLane, zAnchor);
             } 
             else if (rand < 0.85) {
-                // Pure Coin Formations in varying shapes
                 let patternType = Math.random();
                 let chosenLane = Math.floor(Math.random() * 3);
                 if(patternType < 0.3) this.spawnCoinPattern(chosenLane, zAnchor, 'ARCH');
@@ -1012,7 +974,6 @@
                 else this.spawnCoinPattern(chosenLane, zAnchor, 'STRAIGHT');
             } 
             else {
-                // Rare utility capsule drop
                 let pKeys = Object.keys(POWERUP_TYPES);
                 let pType = pKeys[Math.floor(Math.random() * pKeys.length)];
                 let targetLn = Math.floor(Math.random() * 3);
@@ -1037,7 +998,6 @@
                 let currLane = lane;
 
                 if (style === 'ARCH') {
-                    // Parabolic arc calculations
                     currY = 0.4 + Math.sin((i / (count - 1)) * Math.PI) * 2.2;
                 } else if (style === 'ZIGZAG') {
                     currLane = Math.abs((lane + i) % 3);
@@ -1055,22 +1015,18 @@
         },
 
         triggerSpawnEngine() {
-            // Keep arrays populated downstream
             let maxCurrentZ = this.player.z;
             [...this.obstacles, ...this.coins, ...this.powerups, ...this.scenery].forEach(e => {
                 if (e.z > maxCurrentZ) maxCurrentZ = e.z;
             });
 
             while(maxCurrentZ < this.player.z + TRACK_LENGTH) {
-                maxCurrentZ += 25 + Math.random() * 15; // Waves cadence distance spacing
+                maxCurrentZ += 25 + Math.random() * 15; 
                 this.spawnWave(maxCurrentZ);
                 this.generateDecorPair(maxCurrentZ);
             }
         },
 
-        // =========================================================================
-        // TIMESTEP LOGIC UPDATE LOOPS
-        // =========================================================================
         update(dt) {
             if (this.state === 'COUNTDOWN') {
                 this.countdownTimer += dt;
@@ -1090,44 +1046,38 @@
 
             if (this.state !== 'PLAYING') return;
 
-            // Advance general forward distance momentum and metrics
             this.currentSpeed = Math.min(this.maxSpeed, this.currentSpeed + this.speedIncrement * dt);
             let speedMod = this.currentSpeed;
-            if (this.activePowerups['BOOST']) speedMod *= 1.4; // Force extra push
+            if (this.activePowerups['BOOST']) speedMod *= 1.4; 
 
             this.player.z += speedMod * dt;
-            this.distance = this.player.z / 5; // Convert virtual unit scaling to visual meters
+            this.distance = this.player.z / 5; 
 
-            // System combo depletion decay rules
             if(this.comboWindow > 0) {
                 this.comboWindow -= dt;
                 if(this.comboWindow <= 0) this.comboMultiplier = Math.max(1, this.comboMultiplier - 1);
             }
 
-            // Continuous dynamic points tracking calculation formula
             this.score += speedMod * dt * 0.5 * this.comboMultiplier;
 
-            // Context environment theme rotation boundaries
             let dynamicIndex = Math.floor(this.distance / 1200) % THEMES.length;
             if (dynamicIndex !== this.themeIndex) {
                 this.themeIndex = dynamicIndex;
                 this.currentTheme = THEMES[this.themeIndex];
-                this.themeTransitionTimer = 2.5; // Trigger screen flash announcement
+                this.themeTransitionTimer = 2.5; 
                 let banner = document.getElementById('hud-theme-alert');
                 banner.innerText = `ENTERING: ${this.currentTheme.name}`;
                 banner.style.opacity = 1;
                 setTimeout(() => banner.style.opacity = 0, 2000);
             }
 
-            // Smooth horizontal translation tween calculations
             let dx = this.player.targetX - this.player.x;
-            this.player.x += dx * 15 * dt; // High frequency target alignment
-            this.player.tilt = dx * 0.08;  // Visual shift
+            this.player.x += dx * 15 * dt; 
+            this.player.tilt = dx * 0.08;  
 
-            // Gravity mechanics simulation mapping
             if (this.player.isJumping) {
-                this.player.y += this.player.vy * 3.5 * dt;
-                this.player.vy -= 42 * dt; // Gravity descent rate
+                this.player.y += this.player.vy * dt;
+                this.player.vy -= 42 * dt; 
                 if (this.player.y <= 0) {
                     this.player.y = 0;
                     this.player.isJumping = false;
@@ -1135,7 +1085,6 @@
                 }
             }
 
-            // Crouch sliding structural state countdown updates
             if (this.player.isSliding) {
                 this.player.slideTimer -= dt;
                 if (this.player.slideTimer <= 0) {
@@ -1143,7 +1092,6 @@
                 }
             }
 
-            // Powerup expiration ticks handling loop
             for (let type in this.activePowerups) {
                 this.activePowerups[type] -= dt;
                 if (this.activePowerups[type] <= 0) {
@@ -1152,20 +1100,16 @@
             }
             this.updateActivePowerupUI();
 
-            // Object clean up filtering behind camera threshold bounds
             let tailThreshold = this.player.z - 15;
             this.obstacles = this.obstacles.filter(o => o.z > tailThreshold);
             this.coins = this.coins.filter(c => !c.collected && c.z > tailThreshold);
             this.powerups = this.powerups.filter(p => p.z > tailThreshold);
             this.scenery = this.scenery.filter(s => s.z > tailThreshold);
 
-            // Maintain world density boundaries dynamically
             this.triggerSpawnEngine();
 
-            // Update procedural structural rotation frames
             this.player.animFrame += (this.currentSpeed * 0.4) * dt;
 
-            // Execute entity object systems and collision loops
             this.processGameCollisions(dt);
             this.updateParticles(dt);
 
@@ -1177,23 +1121,19 @@
             let pY = this.player.y;
             let pZ = this.player.z;
 
-            // Set up strict bound evaluation constants
             let pWidth = this.player.width;
             let pHeight = this.player.isSliding ? 0.6 : this.player.height;
 
-            // 1. Coins Collection Validation
             this.coins.forEach(c => {
-                // Magnet attraction tracking loop pull
                 if (this.activePowerups['MAGNET']) {
                     let dZ = c.z - pZ;
-                    if (dZ > 0 && dZ < 35) { // Attraction range limit
+                    if (dZ > 0 && dZ < 35) { 
                         let factor = 18 * dt;
                         c.x += (pX - c.x) * factor;
                         c.y += (pY + 0.5 - c.y) * factor;
                     }
                 }
 
-                // Standard bounding box intersection formula
                 if (Math.abs(c.z - pZ) < 1.2) {
                     let sideDist = Math.abs(c.x - pX);
                     let vertDist = Math.abs(c.y - (pY + pHeight/2));
@@ -1203,9 +1143,8 @@
                         this.coinsCollected += value;
                         this.score += value * 10;
                         
-                        // Increment combo tiers
                         this.comboMultiplier = Math.min(10, this.comboMultiplier + 1);
-                        this.comboWindow = 3.0; // Refresh frame window allowance
+                        this.comboWindow = 3.0; 
 
                         AudioEngine.playCoin();
                         this.spawnBurstParticles(c.x, c.y, c.z, '#ffd700', 8);
@@ -1213,23 +1152,19 @@
                 }
             });
 
-            // 2. Powerup Tokens Collection Loop
             this.powerups.forEach(p => {
                 if (Math.abs(p.z - pZ) < 1.5 && Math.abs(p.x - pX) < (pWidth/2 + 0.5)) {
-                    // Activate powerup matching config definitions
                     this.activePowerups[p.type] = POWERUP_TYPES[p.type].duration;
-                    p.z = -999; // Deplete immediately out of visibility spectrum
+                    p.z = -999; 
                     AudioEngine.playPowerup();
                     this.spawnBurstParticles(p.x, p.y, p.z, p.color, 20);
                 }
             });
 
-            // 3. Destructive Hazard Collision Loop
             this.obstacles.forEach(o => {
-                if (Math.abs(o.z - pZ) < 1.0) { // Deep depth alignment verification
+                if (Math.abs(o.z - pZ) < 1.0) { 
                     let sideDist = Math.abs(o.x - pX);
                     
-                    // Box spatial offset math
                     let oMinY = o.y;
                     let oMaxY = o.y + o.h;
                     let pMinY = pY;
@@ -1239,15 +1174,13 @@
                     let verticalOverlap = (pMinY < oMaxY) && (pMaxY > oMinY);
 
                     if (horizontalOverlap && verticalOverlap) {
-                        // Check if shield protection bubble is armed
                         if (this.activePowerups['SHIELD']) {
-                            delete this.activePowerups['SHIELD']; // Break shield bubble protection tier
-                            o.z = -999; // Shatter threat out of physics range
+                            delete this.activePowerups['SHIELD']; 
+                            o.z = -999; 
                             this.cameraShake = 8;
                             AudioEngine.playCollision();
                             this.spawnBurstParticles(o.x, o.y + o.h/2, o.z, '#39ff14', 30);
                         } else {
-                            // Fatal crash executed
                             this.gameOver();
                         }
                     }
@@ -1280,7 +1213,6 @@
 
         updateActivePowerupUI() {
             let container = document.getElementById('timers-box');
-            // Re-render display channels based on active keys
             let html = '';
             for (let type in this.activePowerups) {
                 let def = POWERUP_TYPES[type];
@@ -1294,7 +1226,6 @@
             }
             container.innerHTML = html;
 
-            // Standard Live HUD update triggers
             document.getElementById('hud-score').innerText = String(Math.floor(this.score)).padStart(6, '0');
             document.getElementById('hud-dist').innerText = Math.floor(this.distance);
             document.getElementById('hud-coins').innerText = this.coinsCollected;
@@ -1302,32 +1233,24 @@
             document.getElementById('hud-mult-box').style.opacity = this.comboMultiplier > 1 ? '1' : '0.4';
         },
 
-        // =========================================================================
-        // CAMERA PROJECTION AND RENDERING WORKSHOP
-        // =========================================================================
         project(x, y, z, camZ) {
-            // Transform virtual 3D depth lines onto standard 2D canvas coordinates
             let relativeZ = z - camZ;
-            if (relativeZ <= 0.1) return null; // Prevent dividing by zero or reverse viewing distortion
+            if (relativeZ <= 0.1) return null; 
 
-            // Perspective FOV adjustments linked directly to speed modifications
             let speedFactor = this.currentSpeed / this.baseSpeed;
             let fov = 380 + (speedFactor * 35); 
 
             let scale = fov / relativeZ;
             
-            // Horizon projection midpoint offset coordinates
             let centerX = this.width / 2;
             let centerY = this.height * 0.42; 
 
-            // Camera offsets (Smooth interpolation)
-            let camX = this.player.x * 0.75; // Lag slightly to capture side movement dynamics
-            let camY = 2.4 + (this.player.y * 0.15); // Adjust slightly up as player jumps
+            let camX = this.player.x * 0.75; 
+            let camY = 2.4 + (this.player.y * 0.15); 
 
             let projX = centerX + (x - camX) * scale;
             let projY = centerY - (y - camY) * scale;
 
-            // Camera shake implementation
             if(this.cameraShake > 0) {
                 projX += (Math.random() - 0.5) * this.cameraShake;
                 projY += (Math.random() - 0.5) * this.cameraShake;
@@ -1341,7 +1264,6 @@
             let theme = this.currentTheme;
             ctx.clearRect(0, 0, this.width, this.height);
 
-            // 1. Draw solid canvas spatial dark gradients
             let bgGrad = ctx.createLinearGradient(0, 0, 0, this.height);
             bgGrad.addColorStop(0, theme.sky);
             bgGrad.addColorStop(0.45, theme.ground);
@@ -1349,34 +1271,21 @@
             ctx.fillStyle = bgGrad;
             ctx.fillRect(0, 0, this.width, this.height);
 
-            let camZ = this.player.z - 4.5; // Offset camera behind tracking center point
+            let camZ = this.player.z - 4.5; 
 
-            // 2. Draw Side Scenery / Grid Arrays (Far depth back to near sort)
             this.renderSceneryElements(ctx, camZ);
-
-            // 3. Render 3D Lane Tracks Geometry Grid Outline
             this.renderTrackGrid(ctx, camZ);
-
-            // 4. Render Active Game Coins, Drops, and Obstacles
             this.renderGameEntities(ctx, camZ);
-
-            // 5. Draw Player Character Avatar Mesh Model Outline
             this.renderPlayerCharacter(ctx, camZ);
-
-            // 6. Draw Spatial Particle Effects Sparks Arrays
             this.renderParticles(ctx, camZ);
-            
-            // 7. Speed trails lines overlay effect
             this.renderSpeedStreakLines(ctx);
         },
 
         renderTrackGrid(ctx, camZ) {
             let theme = this.currentTheme;
-            let horizonY = this.height * 0.42;
             let totalSteps = 24;
-            let stepDist = 8; // Virtual block slicing steps
+            let stepDist = 8; 
 
-            // Draw primary grid projection paths
             let startSegment = Math.floor(camZ / stepDist);
 
             for (let i = 0; i < totalSteps; i++) {
@@ -1390,7 +1299,6 @@
 
                 if (!pCurrLeft || !pNextLeft) continue;
 
-                // Alternate road slice color blocks for high velocity sensation
                 let isEven = (startSegment + i) % 2 === 0;
                 ctx.fillStyle = isEven ? 'rgba(255,255,255,0.015)' : 'rgba(0,0,0,0.2)';
                 
@@ -1401,17 +1309,14 @@
                 ctx.lineTo(pCurrRight.x, pCurrRight.y);
                 ctx.fill();
 
-                // Draw Lane Separator Stripes
                 ctx.strokeStyle = theme.primary;
                 ctx.lineWidth = Math.max(1, pCurrLeft.scale * 0.03);
                 
-                // Outer track curbs boundaries
                 ctx.beginPath();
                 ctx.moveTo(pCurrLeft.x, pCurrLeft.y); ctx.lineTo(pNextLeft.x, pNextLeft.y);
                 ctx.moveTo(pCurrRight.x, pCurrRight.y); ctx.lineTo(pNextRight.x, pNextRight.y);
                 ctx.stroke();
 
-                // Inner lane lines dashed cuts
                 ctx.strokeStyle = `rgba(${this.hexToRgb(theme.primary)}, 0.35)`;
                 [-0.5, 0.5].forEach(m => {
                     let pC = this.project(m * LANE_WIDTH, 0, currZ, camZ);
@@ -1426,7 +1331,6 @@
         },
 
         renderSceneryElements(ctx, camZ) {
-            // Sort back to front array render
             let visibleScenery = this.scenery.map(s => ({ obj: s, proj: this.project(s.x, s.y, s.z, camZ) }))
                                              .filter(p => p.proj !== null);
             
@@ -1439,7 +1343,6 @@
                 let h = s.h * p.scale;
 
                 if (s.isPole) {
-                    // Render simple street lamp glow post structure
                     ctx.strokeStyle = '#333';
                     ctx.lineWidth = Math.max(1, 0.1 * p.scale);
                     ctx.beginPath();
@@ -1447,17 +1350,14 @@
                     ctx.lineTo(p.x, p.y - h);
                     ctx.stroke();
 
-                    // Glowing lamp ring head
                     ctx.fillStyle = this.currentTheme.secondary;
                     ctx.beginPath();
                     ctx.arc(p.x, p.y - h, 0.3 * p.scale, 0, Math.PI*2);
                     ctx.fill();
                 } else {
-                    // Standard background corporate building blocks outline
                     ctx.fillStyle = s.color;
                     ctx.fillRect(p.x - w/2, p.y - h, w, h);
 
-                    // Add architectural wireframe structural neon highlights border
                     if (s.isNeonLight) {
                         ctx.strokeStyle = (s.z % 50 > 25) ? this.currentTheme.primary : this.currentTheme.secondary;
                         ctx.lineWidth = 1;
@@ -1468,7 +1368,6 @@
         },
 
         renderGameEntities(ctx, camZ) {
-            // Combine obstacles, coins, powerups together, depth-sort, and render safely
             let entities = [];
 
             this.obstacles.forEach(o => {
@@ -1488,7 +1387,7 @@
                 if (p) entities.push({ type: 'POWER', z: pu.z, proj: p, ref: pu });
             });
 
-            entities.sort((a, b) => b.z - a.z); // Far objects draw first
+            entities.sort((a, b) => b.z - a.z); 
 
             entities.forEach(e => {
                 let p = e.proj;
@@ -1499,7 +1398,6 @@
                     let w = o.w * s;
                     let h = o.h * s;
                     
-                    // Style matching obstacle categorization settings
                     let baseColor = this.currentTheme.secondary;
                     if(o.type === 'TRUCK') baseColor = '#222233';
                     if(o.type === 'CRATE') baseColor = '#5e3a21';
@@ -1507,12 +1405,10 @@
                     ctx.fillStyle = baseColor;
                     ctx.fillRect(p.x - w/2, p.y - h, w, h);
 
-                    // Highlight warning hazard grid borders lines
                     ctx.strokeStyle = '#fff';
                     ctx.lineWidth = Math.max(1, s * 0.03);
                     ctx.strokeRect(p.x - w/2, p.y - h, w, h);
 
-                    // Cross hazard design indicators overlay
                     ctx.beginPath();
                     ctx.moveTo(p.x - w/2, p.y - h); ctx.lineTo(p.x + w/2, p.y);
                     ctx.stroke();
@@ -1521,16 +1417,14 @@
                     let c = e.ref;
                     let radius = 0.35 * s;
                     
-                    // Spinning hover pulse matrix mechanics
                     ctx.fillStyle = '#ffd700';
                     ctx.shadowBlur = 10;
                     ctx.shadowColor = '#ffd700';
 
                     ctx.beginPath();
-                    // Draw elliptical spin profile compression
                     ctx.ellipse(p.x, p.y - radius, radius, radius * Math.abs(Math.sin(c.pulse + this.player.z * 0.1)), 0, 0, Math.PI*2);
                     ctx.fill();
-                    ctx.shadowBlur = 0; // Reset canvas filter bloom operations instantly
+                    ctx.shadowBlur = 0; 
                 } 
                 else if (e.type === 'POWER') {
                     let pu = e.ref;
@@ -1540,7 +1434,6 @@
                     ctx.strokeStyle = '#fff';
                     ctx.lineWidth = 2;
                     
-                    // Capsule poly diamond vector
                     ctx.beginPath();
                     ctx.moveTo(p.x, p.y - size * 1.3);
                     ctx.lineTo(p.x + size * 0.7, p.y - size * 0.6);
@@ -1560,12 +1453,11 @@
             let s = p.scale;
             let w = this.player.width * s;
             let h = this.player.height * s;
-            if (this.player.isSliding) h *= 0.4; // Compress sprite bounds profile visually
+            if (this.player.isSliding) h *= 0.4; 
 
             let pX = p.x;
             let pY = p.y;
 
-            // 1. Draw Ground Projection Ellipse Shadow Drop
             let shadW = w * (1 - (this.player.y * 0.15));
             let groundP = this.project(this.player.x, 0, this.player.z, camZ);
             if (groundP) {
@@ -1575,7 +1467,6 @@
                 ctx.fill();
             }
 
-            // 2. Active Powerups Protection Shield / Aura Visual Rings
             if (this.activePowerups['SHIELD']) {
                 ctx.strokeStyle = POWERUP_TYPES.SHIELD.color;
                 ctx.lineWidth = 3;
@@ -1588,7 +1479,6 @@
             }
 
             if (this.activePowerups['BOOST']) {
-                // Jet stream flame backing blocks
                 ctx.fillStyle = POWERUP_TYPES.BOOST.color;
                 ctx.beginPath();
                 ctx.moveTo(pX - w/4, pY);
@@ -1598,12 +1488,10 @@
                 ctx.fill();
             }
 
-            // 3. Main Synthetic Cyber Runner Avatar Rendering
             ctx.save();
             ctx.translate(pX, pY);
-            ctx.rotate(this.player.tilt); // Apply horizontal lane switch side sway
+            ctx.rotate(this.player.tilt); 
 
-            // Runner torso shell composite block
             let bodyGrad = ctx.createLinearGradient(-w/2, -h, w/2, 0);
             bodyGrad.addColorStop(0, '#ffffff');
             bodyGrad.addColorStop(0.5, this.currentTheme.primary);
@@ -1612,11 +1500,9 @@
 
             ctx.fillRect(-w/2, -h, w, h);
 
-            // Neon visor strip line overlay
             ctx.fillStyle = this.player.isSliding ? '#ff0000' : this.currentTheme.secondary;
             ctx.fillRect(-w/2 + 2, -h + (h * 0.15), w - 4, h * 0.12);
 
-            // Motion Leg Struts simulation matching animation frames loops
             ctx.fillStyle = '#111116';
             if (!this.player.isJumping && !this.player.isSliding) {
                 let legSwing = Math.sin(this.player.animFrame);
@@ -1640,7 +1526,6 @@
 
         renderSpeedStreakLines(ctx) {
             if (this.currentSpeed < 25) return;
-            // Draw horizontal warp visual overlay borders
             let intensity = Math.min(6, Math.floor((this.currentSpeed - 25) * 0.3));
             ctx.strokeStyle = `rgba(255, 255, 255, ${intensity * 0.05})`;
             ctx.lineWidth = 2;
@@ -1654,18 +1539,15 @@
             }
         },
 
-        // Helper conversion utility
         hexToRgb(hex) {
             let num = parseInt(hex.replace("#",""), 16);
             return `${(num >> 16) & 255}, ${(num >> 8) & 255}, ${num & 255}`;
         },
 
-        // Main RAF Engine Loop Timestep Cycle Handler
         loop(timestamp) {
             if (!this.lastTime) this.lastTime = timestamp;
             let elapsedSec = (timestamp - this.lastTime) / 1000;
             
-            // Cap multi-tab lag frame jumps spikes safely
             if (elapsedSec > 0.1) elapsedSec = 0.1; 
 
             this.lastTime = timestamp;
@@ -1677,7 +1559,6 @@
         }
     };
 
-    // Auto start execution call hook on tab ready
     window.onload = () => Game.init();
 </script>
 </body>
